@@ -1,6 +1,7 @@
 package api.youtube.endpoint;
 
 import api.youtube.entity.Member;
+import api.youtube.entity.MemberCredential;
 import api.youtube.entity.MemberLogin;
 import com.googlecode.objectify.ObjectifyService;
 import design.java.rest.RESTFactory;
@@ -31,6 +32,7 @@ public class AuthenticationAPI extends HttpServlet {
 
     static {
         ObjectifyService.register(Member.class);
+        ObjectifyService.register(MemberCredential.class);
         arrayAccept.add("GET");
         arrayAccept.add("POST");
         arrayAccept.add("PUT");
@@ -45,22 +47,38 @@ public class AuthenticationAPI extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession();
-        if (session.getAttribute("currentMemberID") != null){
-            Member member = ofy().load().type(Member.class).id(Long.parseLong(String.valueOf(session.getAttribute("currentMemberID")))).now();
-            if (member == null){
-                RESTFactory.make(RESTGeneralError.NOT_FOUND)
-                        .putErrors(
-                                RESTGeneralError.NOT_FOUND.code(),
-                                "Sai thông tin tài khoản.",
-                                "Tài khoản không tồn tại hoặc đã bị xoá.",
-                                false).doResponse(resp);
-                return;
-            }
-            RESTFactory.make(RESTGeneralSuccess.OK).putData(member).doResponse(resp);
-        }else{
+        String secrectToken = req.getHeader("Authorization");
+        if (secrectToken == null){
             RESTFactory.make(RESTGeneralError.FORBIDDEN).doResponse(resp);
+            return;
         }
+        MemberCredential credential = ofy().load().type(MemberCredential.class).id(secrectToken).now();
+        if(credential == null){
+            RESTFactory.make(RESTGeneralError.FORBIDDEN).doResponse(resp);
+            return;
+        }
+        if(credential.getExpiredTimeMLS() < System.currentTimeMillis()){
+            RESTFactory.make(RESTGeneralError.FORBIDDEN)
+                    .putErrors(
+                            RESTGeneralError.FORBIDDEN.code(),
+                            "Token expired.",
+                            "Token hết hạn hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+
+        Member member = ofy().load().type(Member.class).id(credential.getUserId()).now();
+        if (member == null){
+            RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                    .putErrors(
+                            RESTGeneralError.NOT_FOUND.code(),
+                            "Sai thông tin tài khoản.",
+                            "Tài khoản không tồn tại hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+        RESTFactory.make(RESTGeneralSuccess.OK).putData(member).doResponse(resp);
     }
 
     @Override
@@ -70,13 +88,11 @@ public class AuthenticationAPI extends HttpServlet {
         try {
             RESTDocumentSingle document = RESTDocumentSingle.getInstanceFromRequest(req);
             MemberLogin obj = document.getData().getInstance(MemberLogin.class);
-            LOGGER.info("--->"+RESTJsonUtil.GSON.toJson(obj));
             Member existObj = ofy().load().type(Member.class).filter("username", obj.getUsername()).first().now();
-            LOGGER.info("--->"+RESTJsonUtil.GSON.toJson(existObj));
             if (existObj != null && existObj.getPassword().equals(obj.getPassword())) {
-                HttpSession session = req.getSession();
-                session.setAttribute("currentMemberID", existObj.getId());
-                RESTFactory.make(RESTGeneralSuccess.OK).putData(obj).doResponse(resp);
+                MemberCredential credential = new MemberCredential(existObj.getId());
+                ofy().save().entity(credential).now();
+                RESTFactory.make(RESTGeneralSuccess.OK).putData(credential).doResponse(resp);
             } else {
                 RESTFactory.make(RESTGeneralError.INVALID_CREDENTIALS)
                         .putErrors(

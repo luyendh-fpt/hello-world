@@ -12,7 +12,7 @@
         <filter-name>ObjectifyFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-
+    <!--Start of Controller-->
     <servlet>
         <servlet-name>HomeController</servlet-name>
         <servlet-class>api.youtube.controller.HomeController</servlet-class>
@@ -20,16 +20,6 @@
     <servlet-mapping>
         <servlet-name>HomeController</servlet-name>
         <url-pattern>/home</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>MemberAPI</servlet-name>
-        <servlet-class>api.youtube.endpoint.MemberAPI</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>MemberAPI</servlet-name>
-        <url-pattern>/members/*</url-pattern>
-        <url-pattern>/members</url-pattern>
     </servlet-mapping>
     <servlet>
         <servlet-name>MemberRegisterController</servlet-name>
@@ -47,7 +37,18 @@
         <servlet-name>ListMemberController</servlet-name>
         <url-pattern>/member/list</url-pattern>
     </servlet-mapping>
+    <!--End of Controller-->
 
+    <!--Start of API-->
+    <servlet>
+        <servlet-name>MemberAPI</servlet-name>
+        <servlet-class>api.youtube.endpoint.MemberAPI</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MemberAPI</servlet-name>
+        <url-pattern>/members/*</url-pattern>
+        <url-pattern>/members</url-pattern>
+    </servlet-mapping>
     <servlet>
         <servlet-name>AuthenticationAPI</servlet-name>
         <servlet-class>api.youtube.endpoint.AuthenticationAPI</servlet-class>
@@ -57,7 +58,6 @@
         <url-pattern>/authentication/*</url-pattern>
         <url-pattern>/authentication</url-pattern>
     </servlet-mapping>
-
     <servlet>
         <servlet-name>PlaylistAPI</servlet-name>
         <servlet-class>api.youtube.endpoint.PlaylistAPI</servlet-class>
@@ -67,4 +67,5 @@
         <url-pattern>/playlist/*</url-pattern>
         <url-pattern>/playlist</url-pattern>
     </servlet-mapping>
+    <!--End of API-->
 </web-app>

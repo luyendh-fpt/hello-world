@@ -1,0 +1,88 @@
+package api.youtube.entity;
+
+import api.youtube.utility.Utils;
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.Unindex;
+
+/**
+ * A simple token for student. Save token key and userId.
+ *
+ * Created by daolinh on 10/9/17.
+ */
+@Entity
+public class MemberCredential {
+
+    @Id
+    private String token;
+    @Unindex
+    private String secrectToken;
+    @Index
+    private long userId;
+    @Index
+    private long createdTimeMLS;
+    @Index
+    private long expiredTimeMLS;
+    @Index
+    private int status;
+
+    public MemberCredential() {
+
+    }
+
+    public MemberCredential(long userId) {
+        this.userId = userId;
+        this.token = Utils.generateToken();
+        this.secrectToken = this.token;
+        this.createdTimeMLS = System.currentTimeMillis();
+        // default expire date +7.
+        this.expiredTimeMLS = Utils.addDays(7);
+        this.status = 1;
+    }
+
+    public String getSecrectToken() {
+        return secrectToken;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+        this.secrectToken = this.token;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
+    public long getCreatedTimeMLS() {
+        return createdTimeMLS;
+    }
+
+    public void setCreatedTimeMLS(long createdTimeMLS) {
+        this.createdTimeMLS = createdTimeMLS;
+    }
+
+    public long getExpiredTimeMLS() {
+        return expiredTimeMLS;
+    }
+
+    public void setExpiredTimeMLS(long expiredTimeMLS) {
+        this.expiredTimeMLS = expiredTimeMLS;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+}
