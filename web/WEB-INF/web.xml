@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         version="2.5">
+
+    <filter>
+        <filter-name>ObjectifyFilter</filter-name>
+        <filter-class>com.googlecode.objectify.ObjectifyFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ObjectifyFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <servlet>
+        <servlet-name>HomeController</servlet-name>
+        <servlet-class>api.youtube.controller.HomeController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HomeController</servlet-name>
+        <url-pattern>/home</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>MemberAPI</servlet-name>
+        <servlet-class>api.youtube.endpoint.MemberAPI</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MemberAPI</servlet-name>
+        <url-pattern>/members/*</url-pattern>
+        <url-pattern>/members</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>MemberRegisterController</servlet-name>
+        <servlet-class>api.youtube.controller.MemberRegisterController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MemberRegisterController</servlet-name>
+        <url-pattern>/member/register</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>ListMemberController</servlet-name>
+        <servlet-class>api.youtube.controller.ListMemberController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ListMemberController</servlet-name>
+        <url-pattern>/member/list</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AuthenticationAPI</servlet-name>
+        <servlet-class>api.youtube.endpoint.AuthenticationAPI</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AuthenticationAPI</servlet-name>
+        <url-pattern>/authentication/*</url-pattern>
+        <url-pattern>/authentication</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>PlaylistAPI</servlet-name>
+        <servlet-class>api.youtube.endpoint.PlaylistAPI</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PlaylistAPI</servlet-name>
+        <url-pattern>/playlist/*</url-pattern>
+        <url-pattern>/playlist</url-pattern>
+    </servlet-mapping>
+</web-app>
