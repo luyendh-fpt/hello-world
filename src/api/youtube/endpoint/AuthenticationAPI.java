@@ -47,27 +47,16 @@ public class AuthenticationAPI extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String secrectToken = req.getHeader("Authorization");
-        if (secrectToken == null){
-            RESTFactory.make(RESTGeneralError.FORBIDDEN).doResponse(resp);
-            return;
-        }
-        MemberCredential credential = ofy().load().type(MemberCredential.class).id(secrectToken).now();
+        MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
         if(credential == null){
-            RESTFactory.make(RESTGeneralError.FORBIDDEN).doResponse(resp);
-            return;
-        }
-        if(credential.getExpiredTimeMLS() < System.currentTimeMillis()){
             RESTFactory.make(RESTGeneralError.FORBIDDEN)
                     .putErrors(
                             RESTGeneralError.FORBIDDEN.code(),
-                            "Token expired.",
-                            "Token hết hạn hoặc đã bị xoá.",
+                            "Token không hợp lệ.",
+                            "Không tồn tại thông tin token. Token hết hạn hoặc đã bị xoá.",
                             false).doResponse(resp);
             return;
         }
-
-
         Member member = ofy().load().type(Member.class).id(credential.getUserId()).now();
         if (member == null){
             RESTFactory.make(RESTGeneralError.NOT_FOUND)

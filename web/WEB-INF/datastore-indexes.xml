@@ -9,4 +9,9 @@
         <property name="status" direction="asc"/>
         <property name="createdTimeMLS" direction="desc"/>
     </datastore-index>
+    <datastore-index kind="Video" ancestor="false" source="manual">
+        <property name="createdBy" direction="asc"/>
+        <property name="status" direction="asc"/>
+        <property name="createdTimeMLS" direction="desc"/>
+    </datastore-index>
 </datastore-indexes>

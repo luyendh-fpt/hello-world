@@ -5,6 +5,13 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Unindex;
+import design.java.rest.RESTFactory;
+import design.java.rest.RESTGeneralError;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+
+import static com.googlecode.objectify.ObjectifyService.ofy;
 
 /**
  * A simple token for student. Save token key and userId.
@@ -84,5 +91,19 @@ public class MemberCredential {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public static MemberCredential loadCredential(String  secrectToken){
+        if (secrectToken == null){
+            return null;
+        }
+        MemberCredential credential = ofy().load().type(MemberCredential.class).id(secrectToken).now();
+        if(credential == null){
+            return null;
+        }
+        if(credential.getExpiredTimeMLS() < System.currentTimeMillis()){
+            return null;
+        }
+        return credential;
     }
 }

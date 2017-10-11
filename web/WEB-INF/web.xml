@@ -64,8 +64,17 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>PlaylistAPI</servlet-name>
-        <url-pattern>/playlist/*</url-pattern>
-        <url-pattern>/playlist</url-pattern>
+        <url-pattern>/playlists/*</url-pattern>
+        <url-pattern>/playlists</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>VideoAPI</servlet-name>
+        <servlet-class>api.youtube.endpoint.VideoAPI</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>VideoAPI</servlet-name>
+        <url-pattern>/videos/*</url-pattern>
+        <url-pattern>/videos</url-pattern>
     </servlet-mapping>
     <!--End of API-->
 </web-app>

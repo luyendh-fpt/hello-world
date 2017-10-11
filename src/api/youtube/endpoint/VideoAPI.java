@@ -3,6 +3,7 @@ package api.youtube.endpoint;
 import api.youtube.entity.Member;
 import api.youtube.entity.MemberCredential;
 import api.youtube.entity.Playlist;
+import api.youtube.entity.Video;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.cmd.Query;
 import design.java.rest.RESTFactory;
@@ -15,7 +16,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,12 +27,13 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 /**
  * Created by daolinh on 9/29/17.
  */
-public class PlaylistAPI extends HttpServlet {
+public class VideoAPI extends HttpServlet {
 
-    private static final Logger LOGGER = Logger.getLogger(PlaylistAPI.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(VideoAPI.class.getSimpleName());
     private static ArrayList<String> arrayAccept = new ArrayList<>();
 
     static {
+        ObjectifyService.register(Video.class);
         ObjectifyService.register(Playlist.class);
         ObjectifyService.register(Member.class);
         ObjectifyService.register(MemberCredential.class);
@@ -86,7 +87,7 @@ public class PlaylistAPI extends HttpServlet {
                     page = 1;
                     limit = 10;
                 }
-                Query<Playlist> query = ofy().load().type(Playlist.class).filter("createdBy", credential.getUserId()).filter("status", 1);
+                Query<Video> query = ofy().load().type(Video.class).filter("createdBy", credential.getUserId()).filter("status", 1).order("-createdTimeMLS");
                 totalItem = query.count();
                 totalPage = totalItem / limit;
                 /*
@@ -95,7 +96,7 @@ public class PlaylistAPI extends HttpServlet {
                 if (totalItem % limit > 0) {
                     totalPage++;
                 }
-                List<Playlist> list = query.limit(limit).offset((page - 1) * limit).list();
+                List<Video> list = query.limit(limit).offset((page - 1) * limit).list();
                 RESTFactory.make(RESTGeneralSuccess.OK).putData(list).putMeta("totalPage", totalPage)
                         .putMeta("totalItem", totalItem).putMeta("limit", limit).putMeta("page", page).doResponse(resp);
                 break;
@@ -125,12 +126,11 @@ public class PlaylistAPI extends HttpServlet {
 
         try {
             RESTDocumentSingle document = RESTDocumentSingle.getInstanceFromRequest(req);
-            Playlist obj = document.getData().getInstance(Playlist.class);
+            Video obj = document.getData().getInstance(Video.class);
             if (!obj.isValid()) {
                 RESTFactory.make(RESTGeneralError.BAD_REQUEST).putErrors(RESTGeneralError.BAD_REQUEST.code(), "Dữ liệu không hợp .", "Trường name phải lớn hơn 7 ký tự.", false).doResponse(resp);
                 return;
             }
-            obj.setId(System.currentTimeMillis());
             obj.setCreatedTimeMLS(Calendar.getInstance().getTimeInMillis());
             obj.setUpdatedTimeMLS(Calendar.getInstance().getTimeInMillis());
             obj.setCreatedBy(credential.getUserId());
