@@ -47,6 +47,7 @@ public class AuthenticationAPI extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        RESTHandle.passRequest(resp, arrayAccept);
         MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
         if(credential == null){
             RESTFactory.make(RESTGeneralError.FORBIDDEN)

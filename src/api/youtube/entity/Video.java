@@ -12,6 +12,8 @@ import com.googlecode.objectify.annotation.Unindex;
 public class Video {
 
     @Id
+    private long id;
+    @Index
     private String youtubeId;
     @Unindex
     private String name;
@@ -32,6 +34,14 @@ public class Video {
     private long updatedTimeMLS;
     @Index
     private int status;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public String getYoutubeId() {
         return youtubeId;

@@ -5,11 +5,6 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Unindex;
-import design.java.rest.RESTFactory;
-import design.java.rest.RESTGeneralError;
-
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
@@ -24,7 +19,7 @@ public class MemberCredential {
     @Id
     private String token;
     @Unindex
-    private String secrectToken;
+    private String secretToken;
     @Index
     private long userId;
     @Index
@@ -41,15 +36,15 @@ public class MemberCredential {
     public MemberCredential(long userId) {
         this.userId = userId;
         this.token = Utils.generateToken();
-        this.secrectToken = this.token;
+        this.secretToken = this.token;
         this.createdTimeMLS = System.currentTimeMillis();
         // default expire date +7.
         this.expiredTimeMLS = Utils.addDays(7);
         this.status = 1;
     }
 
-    public String getSecrectToken() {
-        return secrectToken;
+    public String getSecretToken() {
+        return secretToken;
     }
 
     public String getToken() {
@@ -58,7 +53,7 @@ public class MemberCredential {
 
     public void setToken(String token) {
         this.token = token;
-        this.secrectToken = this.token;
+        this.secretToken = this.token;
     }
 
     public long getUserId() {

@@ -3,6 +3,7 @@ package api.youtube.endpoint;
 import api.youtube.entity.Member;
 import api.youtube.entity.MemberCredential;
 import api.youtube.entity.Playlist;
+import api.youtube.entity.Video;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.cmd.Query;
 import design.java.rest.RESTFactory;
@@ -143,5 +144,101 @@ public class PlaylistAPI extends HttpServlet {
             RESTFactory.make(RESTGeneralError.SERVER_ERROR).doResponse(resp);
             return;
         }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LOGGER.info("Gọi playlist endpoint, method PUT.");
+        RESTHandle.passRequest(resp, arrayAccept);
+        MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
+        if (credential == null) {
+            RESTFactory.make(RESTGeneralError.FORBIDDEN)
+                    .putErrors(
+                            RESTGeneralError.FORBIDDEN.code(),
+                            "Token không hợp lệ.",
+                            "Không tồn tại thông tin token. Token hết hạn hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        String[] arrayURI = req.getRequestURI().split("/");
+        String id = "";
+        System.out.println(arrayURI.length);
+        if (arrayURI.length != 3) {
+            RESTFactory.make(RESTGeneralError.BAD_REQUEST).doResponse(resp);
+            return;
+        }
+        id = arrayURI[arrayURI.length - 1];
+
+        Playlist obj = ofy().load().type(Playlist.class).id(Long.parseLong(id)).now();
+        if (obj == null || obj.getCreatedBy() != credential.getUserId()) {
+            RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                    .putErrors(
+                            RESTGeneralError.NOT_FOUND.code(),
+                            "Không tìm thấy Playlist.",
+                            "Playlist không tồn tại hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        try {
+            RESTDocumentSingle document = RESTDocumentSingle.getInstanceFromRequest(req);
+            Playlist updateObj = document.getData().getInstance(Playlist.class);
+            if (!updateObj.isValid()) {
+                RESTFactory.make(RESTGeneralError.BAD_REQUEST).putErrors(RESTGeneralError.BAD_REQUEST.code(), "Dữ liệu không hợp .", "Trường name phải lớn hơn 7 ký tự.", false).doResponse(resp);
+                return;
+            }
+            obj.setName(updateObj.getName());
+            obj.setDescription(updateObj.getDescription());
+            obj.setThumbnailUrl(updateObj.getThumbnailUrl());
+            obj.setUpdatedTimeMLS(Calendar.getInstance().getTimeInMillis());
+            ofy().save().entity(obj).now();
+            RESTFactory.make(RESTGeneralSuccess.OK).putData(obj).doResponse(resp);
+            return;
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+            RESTFactory.make(RESTGeneralError.SERVER_ERROR).doResponse(resp);
+            return;
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LOGGER.info("Gọi playlist endpoint, method DELETE.");
+        RESTHandle.passRequest(resp, arrayAccept);
+
+        MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
+        if (credential == null) {
+            RESTFactory.make(RESTGeneralError.FORBIDDEN)
+                    .putErrors(
+                            RESTGeneralError.FORBIDDEN.code(),
+                            "Token không hợp lệ.",
+                            "Không tồn tại thông tin token. Token hết hạn hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        String[] arrayURI = req.getRequestURI().split("/");
+        String id = "";
+        System.out.println(arrayURI.length);
+        if (arrayURI.length != 3) {
+            RESTFactory.make(RESTGeneralError.BAD_REQUEST).doResponse(resp);
+            return;
+        }
+        id = arrayURI[arrayURI.length - 1];
+
+        Playlist obj = ofy().load().type(Playlist.class).id(Long.parseLong(id)).now();
+        if (obj == null || obj.getCreatedBy() != credential.getUserId()) {
+            RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                    .putErrors(
+                            RESTGeneralError.NOT_FOUND.code(),
+                            "Không tìm thấy Playlist.",
+                            "Playlist không tồn tại hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+        obj.setStatus(-1);
+        ofy().save().entity(obj).now();
+        RESTFactory.make(RESTGeneralSuccess.OK).putData(obj).doResponse(resp);
     }
 }

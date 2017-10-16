@@ -51,7 +51,7 @@ public class VideoAPI extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        LOGGER.info("Gọi playlist endpoint, method GET.");
+        LOGGER.info("Gọi video endpoint, method GET.");
         RESTHandle.passRequest(resp, arrayAccept);
 
         MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
@@ -76,6 +76,7 @@ public class VideoAPI extends HttpServlet {
         }
         switch (action) {
             case 1:
+                LOGGER.info("Lấy danh sách video.");
                 int page = 1;
                 int limit = 10;
                 int totalPage = 1;
@@ -87,7 +88,19 @@ public class VideoAPI extends HttpServlet {
                     page = 1;
                     limit = 10;
                 }
-                Query<Video> query = ofy().load().type(Video.class).filter("createdBy", credential.getUserId()).filter("status", 1).order("-createdTimeMLS");
+
+                long playlistId = -1;
+                try {
+                    playlistId = Long.parseLong(req.getParameter("playlist"));
+                } catch (Exception e) {
+                    playlistId = -1;
+                }
+
+                Query<Video> query = ofy().load().type(Video.class).filter("createdBy", credential.getUserId()).filter("status", 1);
+                if (playlistId > 0) {
+                    query = query.filter("playlistId", playlistId);
+                }
+                query = query.order("-createdTimeMLS");
                 totalItem = query.count();
                 totalPage = totalItem / limit;
                 /*
@@ -101,7 +114,17 @@ public class VideoAPI extends HttpServlet {
                         .putMeta("totalItem", totalItem).putMeta("limit", limit).putMeta("page", page).doResponse(resp);
                 break;
             case 2:
-                Member obj = ofy().load().type(Member.class).id(Long.valueOf(id)).now();
+                LOGGER.info("Lấy video chi tiết với id là '" + id + "'");
+                Video obj = ofy().load().type(Video.class).id(Long.parseLong(id)).now();
+                if (obj == null || obj.getCreatedBy() != credential.getUserId() || obj.getStatus() == -1) {
+                    RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                            .putErrors(
+                                    RESTGeneralError.NOT_FOUND.code(),
+                                    "Không tìm thấy Video.",
+                                    "Video không tồn tại hoặc đã bị xoá.",
+                                    false).doResponse(resp);
+                    return;
+                }
                 RESTFactory.make(RESTGeneralSuccess.OK).putData(obj).doResponse(resp);
                 break;
             default:
@@ -111,7 +134,7 @@ public class VideoAPI extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        LOGGER.info("Gọi playlist endpoint, method POST.");
+        LOGGER.info("Gọi video endpoint, method POST.");
         RESTHandle.passRequest(resp, arrayAccept);
         MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
         if (credential == null) {
@@ -131,6 +154,7 @@ public class VideoAPI extends HttpServlet {
                 RESTFactory.make(RESTGeneralError.BAD_REQUEST).putErrors(RESTGeneralError.BAD_REQUEST.code(), "Dữ liệu không hợp .", "Trường name phải lớn hơn 7 ký tự.", false).doResponse(resp);
                 return;
             }
+            obj.setId(Calendar.getInstance().getTimeInMillis());
             obj.setCreatedTimeMLS(Calendar.getInstance().getTimeInMillis());
             obj.setUpdatedTimeMLS(Calendar.getInstance().getTimeInMillis());
             obj.setCreatedBy(credential.getUserId());
@@ -143,5 +167,103 @@ public class VideoAPI extends HttpServlet {
             RESTFactory.make(RESTGeneralError.SERVER_ERROR).doResponse(resp);
             return;
         }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LOGGER.info("Gọi video endpoint, method PUT.");
+        RESTHandle.passRequest(resp, arrayAccept);
+        MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
+        if (credential == null) {
+            RESTFactory.make(RESTGeneralError.FORBIDDEN)
+                    .putErrors(
+                            RESTGeneralError.FORBIDDEN.code(),
+                            "Token không hợp lệ.",
+                            "Không tồn tại thông tin token. Token hết hạn hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        String[] arrayURI = req.getRequestURI().split("/");
+        String id = "";
+        System.out.println(arrayURI.length);
+        if (arrayURI.length != 3) {
+            RESTFactory.make(RESTGeneralError.BAD_REQUEST).doResponse(resp);
+            return;
+        }
+        id = arrayURI[arrayURI.length - 1];
+
+        Video obj = ofy().load().type(Video.class).id(Long.parseLong(id)).now();
+        if (obj == null || obj.getCreatedBy() != credential.getUserId()) {
+            RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                    .putErrors(
+                            RESTGeneralError.NOT_FOUND.code(),
+                            "Không tìm thấy Video.",
+                            "Video không tồn tại hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        try {
+            RESTDocumentSingle document = RESTDocumentSingle.getInstanceFromRequest(req);
+            Video updateObj = document.getData().getInstance(Video.class);
+            if (!updateObj.isValid()) {
+                RESTFactory.make(RESTGeneralError.BAD_REQUEST).putErrors(RESTGeneralError.BAD_REQUEST.code(), "Dữ liệu không hợp .", "Trường name phải lớn hơn 7 ký tự.", false).doResponse(resp);
+                return;
+            }
+            obj.setName(updateObj.getName());
+            obj.setDescription(updateObj.getDescription());
+            obj.setKeywords(updateObj.getKeywords());
+            obj.setThumbnail(updateObj.getThumbnail());
+            obj.setPlaylistId(updateObj.getPlaylistId());
+            obj.setUpdatedTimeMLS(Calendar.getInstance().getTimeInMillis());
+            ofy().save().entity(obj).now();
+            RESTFactory.make(RESTGeneralSuccess.CREATED).putData(obj).doResponse(resp);
+            return;
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+            RESTFactory.make(RESTGeneralError.SERVER_ERROR).doResponse(resp);
+            return;
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LOGGER.info("Gọi video endpoint, method DELETE.");
+        RESTHandle.passRequest(resp, arrayAccept);
+
+        MemberCredential credential = MemberCredential.loadCredential(req.getHeader("Authorization"));
+        if (credential == null) {
+            RESTFactory.make(RESTGeneralError.FORBIDDEN)
+                    .putErrors(
+                            RESTGeneralError.FORBIDDEN.code(),
+                            "Token không hợp lệ.",
+                            "Không tồn tại thông tin token. Token hết hạn hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+
+        String[] arrayURI = req.getRequestURI().split("/");
+        String id = "";
+        System.out.println(arrayURI.length);
+        if (arrayURI.length != 3) {
+            RESTFactory.make(RESTGeneralError.BAD_REQUEST).doResponse(resp);
+            return;
+        }
+        id = arrayURI[arrayURI.length - 1];
+
+        Video obj = ofy().load().type(Video.class).id(Long.parseLong(id)).now();
+        if (obj == null || obj.getCreatedBy() != credential.getUserId()) {
+            RESTFactory.make(RESTGeneralError.NOT_FOUND)
+                    .putErrors(
+                            RESTGeneralError.NOT_FOUND.code(),
+                            "Không tìm thấy Video.",
+                            "Video không tồn tại hoặc đã bị xoá.",
+                            false).doResponse(resp);
+            return;
+        }
+        obj.setStatus(-1);
+        ofy().save().entity(obj).now();
+        RESTFactory.make(RESTGeneralSuccess.OK).putData(obj).doResponse(resp);
     }
 }
